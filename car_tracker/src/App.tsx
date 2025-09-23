@@ -1,14 +1,21 @@
 // src/App.tsx
-import "leaflet/dist/leaflet.css";
 import React, { useState } from "react";
-import { MapPin, Truck, Clock, FileText, Route, Fuel } from "lucide-react";
-import  MapComponent  from "./components/MapComponent";
+import { Truck, Clock, FileText, Route, Fuel, MapPin } from "lucide-react";
+import MapComponent from "./components/MapComponent";
+import LocationSelect from "./components/LocationSelect";
 
-interface TripFormData {
-  current_location: string;
-  pickup_location: string;
-  dropoff_location: string;
-  current_cycle_used: number;
+// Types (same as before)
+export interface TripSegment {
+  segment_type: string;
+  segment_type_display?: string;
+  sequence_number: number;
+  start_time: string;
+  end_time: string;
+  formatted_start_time?: string;
+  formatted_end_time?: string;
+  duration_hours: number;
+  distance_miles: number;
+  location: string;
 }
 
 interface LogEntry {
@@ -31,27 +38,13 @@ interface DailyLog {
   entries?: LogEntry[];
 }
 
-export interface TripSegment {
-  segment_type: string;
-  segment_type_display?: string;
-  sequence_number: number;
-  start_time: string;
-  end_time: string;
-  formatted_start_time?: string;
-  formatted_end_time?: string;
-  duration_hours: number;
-  distance_miles: number;
-  location: string;
-}
-
-interface Routeummary {
-  origin: string;
-  destination: string;
-  waypoints: string[];
-  total_distance_miles: number;
-  estimated_duration_hours: number;
-  fuel_stops_needed: number;
-  rest_stops_needed: number;
+interface Location {
+  id: string;
+  name: string;
+  coords: [number, number]; // [lng, lat]
+  locality?: string;
+  region?: string;
+  country?: string;
 }
 
 interface TripResult {
@@ -66,42 +59,56 @@ interface TripResult {
   required_rest_stops: number;
   segments?: TripSegment[];
   daily_logs?: DailyLog[];
-  route_summary?: Routeummary;
+  route_summary?: any;
   created_at: string;
 }
 
 const App: React.FC = () => {
-  const [formData, setFormData] = useState<TripFormData>({
-    current_location: "",
-    pickup_location: "",
-    dropoff_location: "",
-    current_cycle_used: 0,
-  });
+  // Location states using the Location type
+  const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
+  const [pickupLocation, setPickupLocation] = useState<Location | null>(null);
+  const [dropoffLocation, setDropoffLocation] = useState<Location | null>(null);
+  const [currentCycleUsed, setCurrentCycleUsed] = useState<number>(0);
 
   const [tripResult, setTripResult] = useState<TripResult | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === "current_cycle_used" ? parseFloat(value) || 0 : value,
-    }));
-  };
+  const handleSubmit = async () => {
+    if (!currentLocation || !pickupLocation || !dropoffLocation) {
+      setError("Please select all locations");
+      return;
+    }
 
-  const handleSubmit = async (e?: React.MouseEvent<HTMLButtonElement>) => {
-    if (e) e.preventDefault();
     setLoading(true);
     setError("");
 
     try {
+      // Prepare the request payload with coordinates
+      const requestPayload = {
+        current_location: {
+          name: currentLocation.name,
+          coords: currentLocation.coords, // [lng, lat]
+        },
+        pickup_location: {
+          name: pickupLocation.name,
+          coords: pickupLocation.coords, // [lng, lat]
+        },
+        dropoff_location: {
+          name: dropoffLocation.name,
+          coords: dropoffLocation.coords, // [lng, lat]
+        },
+        current_cycle_used: currentCycleUsed,
+      };
+
+      console.log("Sending request with coordinates:", requestPayload);
+
       const response = await fetch("http://localhost:8000/api/trips/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(requestPayload),
       });
 
       if (!response.ok) {
@@ -111,6 +118,8 @@ const App: React.FC = () => {
 
       const result: TripResult = await response.json();
       setTripResult(result);
+
+      console.log("Trip created successfully:", result);
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "An unknown error occurred";
@@ -163,17 +172,6 @@ const App: React.FC = () => {
           </h3>
           <div className="text-sm text-gray-600">
             Total Miles: {dailyLog.total_miles}
-          </div>
-        </div>
-
-        {/* ELD Grid Header */}
-        <div className="mb-2">
-          <h4 className="text-md font-medium mb-2">
-            Electronic Logging Device (ELD) Grid
-          </h4>
-          <div className="text-xs text-gray-600 mb-2">
-            Hours shown in 24-hour format. Each colored bar represents duty
-            status during that time period.
           </div>
         </div>
 
@@ -260,43 +258,11 @@ const App: React.FC = () => {
             <div className="text-xs text-gray-600">Personal time</div>
           </div>
         </div>
-
-        {/* Entry Details */}
-        {dailyLog.entries && dailyLog.entries.length > 0 && (
-          <div className="mt-4">
-            <h5 className="font-medium mb-2">Detailed Log Entries:</h5>
-            <div className="space-y-1 text-xs">
-              {dailyLog.entries.map((entry, idx) => (
-                <div
-                  key={idx}
-                  className="flex justify-between items-center py-1 px-2 bg-gray-50 rounded"
-                >
-                  <span className="flex items-center">
-                    <div
-                      className={`w-3 h-3 rounded ${getDutyStatusColor(
-                        entry.duty_status
-                      )} mr-2`}
-                    />
-                    {entry.duty_status_display ||
-                      entry.duty_status.replace("_", " ")}
-                  </span>
-                  <span className="text-gray-600">
-                    {formatTime(entry.start_hour)} -{" "}
-                    {formatTime(entry.end_hour)} at {entry.location}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     );
   };
 
-  const isFormValid =
-    formData.current_location &&
-    formData.pickup_location &&
-    formData.dropoff_location;
+  const isFormValid = currentLocation && pickupLocation && dropoffLocation;
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -312,79 +278,59 @@ const App: React.FC = () => {
           </p>
         </header>
 
-        {/* Input Form */}
+        {/* Enhanced Input Form */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h2 className="text-xl font-semibold mb-4">Enter Trip Details</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <MapPin className="inline-block w-4 h-4 mr-1" />
-                Current Location
-              </label>
-              <input
-                type="text"
-                name="current_location"
-                value={formData.current_location}
-                onChange={handleInputChange}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="e.g., Chicago, IL"
-                required
-              />
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Location Selection Components */}
+            <LocationSelect
+              label="Current Location"
+              value={currentLocation}
+              onChange={setCurrentLocation}
+              placeholder="Search for your current city..."
+              required
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Route className="inline-block w-4 h-4 mr-1" />
-                Pickup Location
-              </label>
-              <input
-                type="text"
-                name="pickup_location"
-                value={formData.pickup_location}
-                onChange={handleInputChange}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="e.g., Detroit, MI"
-                required
-              />
-            </div>
+            <LocationSelect
+              label="Pickup Location"
+              value={pickupLocation}
+              onChange={setPickupLocation}
+              placeholder="Search for pickup city..."
+              required
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <MapPin className="inline-block w-4 h-4 mr-1" />
-                Dropoff Location
-              </label>
-              <input
-                type="text"
-                name="dropoff_location"
-                value={formData.dropoff_location}
-                onChange={handleInputChange}
-                className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="e.g., Denver, CO"
-                required
-              />
-            </div>
+            <LocationSelect
+              label="Dropoff Location"
+              value={dropoffLocation}
+              onChange={setDropoffLocation}
+              placeholder="Search for delivery city..."
+              required
+            />
 
+            {/* Current Cycle Used */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Clock className="inline-block w-4 h-4 mr-1" />
-                Current Cycle Used (Hours)
+                Hours Used This Week (Optional)
               </label>
               <input
                 type="number"
-                name="current_cycle_used"
-                value={formData.current_cycle_used}
-                onChange={handleInputChange}
+                value={currentCycleUsed}
+                onChange={(e) =>
+                  setCurrentCycleUsed(parseFloat(e.target.value) || 0)
+                }
                 min="0"
                 max="70"
-                step="0.1"
+                step="0.5"
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="0.0"
+                placeholder="0 (if unknown or starting fresh)"
               />
               <div className="text-xs text-gray-500 mt-1">
-                Hours already used in current 8-day cycle (max 70)
+                Leave as 0 if unsure - the system will plan conservatively.
               </div>
             </div>
 
+            {/* Submit Button */}
             <div className="md:col-span-2">
               <button
                 onClick={handleSubmit}
@@ -421,6 +367,28 @@ const App: React.FC = () => {
               </button>
             </div>
           </div>
+
+          {/* Debug info (remove in production) */}
+          {(currentLocation || pickupLocation || dropoffLocation) && (
+            <div className="mt-4 p-3 bg-gray-50 rounded text-xs text-gray-600">
+              <strong>Selected Coordinates:</strong>
+              <div>
+                Current: {currentLocation?.name}{" "}
+                {currentLocation?.coords &&
+                  `(${currentLocation.coords[1]}, ${currentLocation.coords[0]})`}
+              </div>
+              <div>
+                Pickup: {pickupLocation?.name}{" "}
+                {pickupLocation?.coords &&
+                  `(${pickupLocation.coords[1]}, ${pickupLocation.coords[0]})`}
+              </div>
+              <div>
+                Dropoff: {dropoffLocation?.name}{" "}
+                {dropoffLocation?.coords &&
+                  `(${dropoffLocation.coords[1]}, ${dropoffLocation.coords[0]})`}
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className="mt-4 p-4 bg-red-100 border border-red-300 text-red-700 rounded-md">
@@ -564,41 +532,6 @@ const App: React.FC = () => {
 
             {/* Map Placeholder */}
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-2xl font-semibold mb-6 flex items-center">
-                <MapPin className="mr-2 text-red-600" />
-                Route Map
-              </h2>
-              <div className="h-96 bg-gradient-to-br from-blue-50 to-green-50 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-                <div className="text-center text-gray-600">
-                  <MapPin className="w-16 h-16 mx-auto mb-4 text-blue-500" />
-                  <p className="text-xl font-semibold mb-2">
-                    Interactive Map Integration
-                  </p>
-                  <p className="text-sm mb-4">
-                    Ready for Google Maps, MapBox, or OpenStreetMap API
-                  </p>
-                  <div className="bg-white p-4 rounded-lg shadow-sm max-w-md mx-auto">
-                    <div className="text-sm space-y-1">
-                      <p>
-                        <strong>Origin:</strong> {tripResult.current_location}
-                      </p>
-                      <p>
-                        <strong>Pickup:</strong> {tripResult.pickup_location}
-                      </p>
-                      <p>
-                        <strong>Destination:</strong>{" "}
-                        {tripResult.dropoff_location}
-                      </p>
-                      <p>
-                        <strong>Total Distance:</strong>{" "}
-                        {tripResult.total_distance} miles
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* API Integration Instructions */}
               {/* Real Map Integration */}
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-2xl font-semibold mb-6 flex items-center">
