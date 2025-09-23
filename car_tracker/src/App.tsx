@@ -1,10 +1,8 @@
-// src/App.tsx
 import React, { useState } from "react";
-import { Truck, Clock, FileText, Route, Fuel, MapPin } from "lucide-react";
+import { Truck, Clock, FileText, Route, Fuel } from "lucide-react";
 import MapComponent from "./components/MapComponent";
 import LocationSelect from "./components/LocationSelect";
 
-// Types (same as before)
 export interface TripSegment {
   segment_type: string;
   segment_type_display?: string;
@@ -437,22 +435,46 @@ const App: React.FC = () => {
                 </div>
               </div>
 
-              {/* Route Path */}
+              {/* Route Path Display */}
               <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-semibold mb-2">Trip Route:</h3>
-                <div className="flex items-center space-x-2 text-sm">
+                <h3 className="font-semibold mb-2">Calculated Route:</h3>
+                <div className="flex items-center space-x-2 text-sm flex-wrap">
                   <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">
-                    {tripResult.current_location}
+                    {currentLocation?.name}
                   </span>
                   <span>→</span>
                   <span className="px-2 py-1 bg-green-100 text-green-700 rounded">
-                    {tripResult.pickup_location}
+                    {pickupLocation?.name}
                   </span>
                   <span>→</span>
                   <span className="px-2 py-1 bg-red-100 text-red-700 rounded">
-                    {tripResult.dropoff_location}
+                    {dropoffLocation?.name}
                   </span>
                 </div>
+                <div className="mt-2 text-xs text-gray-600">
+                  Distance calculated using real coordinates and routing
+                  algorithms
+                </div>
+              </div>
+            </div>
+
+            {/* Enhanced Map Display */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-2xl font-semibold mb-6">
+                Interactive Route Map
+              </h2>
+              <MapComponent
+                segments={tripResult.segments}
+                currentLocation={currentLocation?.name || ""}
+                pickupLocation={pickupLocation?.name || ""}
+                dropoffLocation={dropoffLocation?.name || ""}
+              />
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <strong>Map Features:</strong> Shows your route with pickup
+                  and dropoff locations, plus fuel stops and rest breaks
+                  required for HOS compliance.
+                </p>
               </div>
             </div>
 
@@ -518,66 +540,14 @@ const App: React.FC = () => {
                 <p className="text-sm text-blue-800">
                   <strong>FMCSA Compliance:</strong> These logs meet federal
                   Hours of Service regulations (49 CFR Part 395) for
-                  property-carrying commercial motor vehicles. Each day shows
-                  duty status changes and ensures compliance with 11-hour
-                  driving limit, 14-hour on-duty window, and required rest
-                  periods.
+                  property-carrying commercial motor vehicles. Calculated using
+                  precise route distances from coordinates.
                 </p>
               </div>
               {tripResult.daily_logs &&
                 tripResult.daily_logs.map((dailyLog, index) => (
                   <div key={index}>{renderELDGrid(dailyLog)}</div>
                 ))}
-            </div>
-
-            {/* Map Placeholder */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              {/* Real Map Integration */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-2xl font-semibold mb-6 flex items-center">
-                  <MapPin className="mr-2 text-red-600" />
-                  Route Map
-                </h2>
-
-                <MapComponent
-                  segments={tripResult.segments}
-                  currentLocation={tripResult.current_location}
-                  pickupLocation={tripResult.pickup_location}
-                  dropoffLocation={tripResult.dropoff_location}
-                />
-
-                <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <h4 className="font-semibold text-blue-800 mb-2">
-                    Map Legend
-                  </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-                    <div className="flex items-center">
-                      <div className="w-4 h-4 rounded-full bg-gray-500 mr-2"></div>
-                      <span>Current Location</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-4 h-4 rounded-full bg-green-500 mr-2"></div>
-                      <span>Pickup</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-4 h-4 rounded-full bg-green-600 mr-2"></div>
-                      <span>Dropoff</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-4 h-4 rounded-full bg-yellow-500 mr-2"></div>
-                      <span>Fuel Stop</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-4 h-4 rounded-full bg-purple-500 mr-2"></div>
-                      <span>Rest Break</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-4 h-4 rounded-full bg-blue-500 mr-2"></div>
-                      <span>Sleeper Berth</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         )}
