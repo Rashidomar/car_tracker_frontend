@@ -101,7 +101,7 @@ const App: React.FC = () => {
 
       console.log("Sending request with coordinates:", requestPayload);
 
-      const response = await fetch("http://localhost:8000/api/trips/", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/trips/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
