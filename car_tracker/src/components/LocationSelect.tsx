@@ -54,7 +54,7 @@ export default function LocationSelect({
 
         // Use the Django geocoding autocomplete endpoint
         const res = await fetch(
-          `http://localhost:8000/api/geocode/autocomplete/?q=${encodeURIComponent(
+          `${import.meta.env.VITE_API_URL}/geocode/autocomplete/?q=${encodeURIComponent(
             query
           )}`,
           {
