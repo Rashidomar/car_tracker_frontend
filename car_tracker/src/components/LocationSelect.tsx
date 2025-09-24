@@ -156,12 +156,12 @@ export default function LocationSelect({
     setQuery("");
   };
 
-  const handleInputChange = (value: string) => {
-    setQuery(value);
+  const handleInputChange = (inputValue: string) => {
+    setQuery(inputValue);
     setError(null);
 
     // Clear selection if input doesn't match current selection
-    if (value !== value?.name) {
+    if (inputValue && value?.name && inputValue !== value.name) {
       onChange(null);
     }
   };
