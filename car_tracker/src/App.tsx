@@ -62,7 +62,6 @@ interface TripResult {
 }
 
 const App: React.FC = () => {
-  // Location states using the Location type
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
   const [pickupLocation, setPickupLocation] = useState<Location | null>(null);
   const [dropoffLocation, setDropoffLocation] = useState<Location | null>(null);
@@ -82,19 +81,18 @@ const App: React.FC = () => {
     setError("");
 
     try {
-      // Prepare the request payload with coordinates
       const requestPayload = {
         current_location: {
           name: currentLocation.name,
-          coords: currentLocation.coords, // [lng, lat]
+          coords: currentLocation.coords,
         },
         pickup_location: {
           name: pickupLocation.name,
-          coords: pickupLocation.coords, // [lng, lat]
+          coords: pickupLocation.coords,
         },
         dropoff_location: {
           name: dropoffLocation.name,
-          coords: dropoffLocation.coords, // [lng, lat]
+          coords: dropoffLocation.coords,
         },
         current_cycle_used: currentCycleUsed,
       };
@@ -173,10 +171,8 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* ELD Grid */}
         <div className="border rounded overflow-x-auto">
           <div className="min-w-full">
-            {/* Hour Headers */}
             <div className="flex bg-gray-100 border-b">
               <div className="w-32 p-2 text-xs font-semibold border-r">
                 Duty Status
@@ -191,7 +187,6 @@ const App: React.FC = () => {
               ))}
             </div>
 
-            {/* Duty Status Rows */}
             {[
               { label: "Off Duty", status: "off_duty" },
               { label: "Sleeper Berth", status: "sleeper_berth" },
@@ -233,7 +228,6 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Daily Totals */}
         <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div className="text-center p-3 bg-red-50 rounded">
             <div className="font-semibold text-red-700">Driving</div>
@@ -276,11 +270,9 @@ const App: React.FC = () => {
           </p>
         </header>
 
-        {/* Enhanced Input Form */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h2 className="text-xl font-semibold mb-4">Enter Trip Details</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Location Selection Components */}
             <LocationSelect
               label="Current Location"
               value={currentLocation}
@@ -305,7 +297,6 @@ const App: React.FC = () => {
               required
             />
 
-            {/* Current Cycle Used */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Clock className="inline-block w-4 h-4 mr-1" />
@@ -328,7 +319,6 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* Submit Button */}
             <div className="md:col-span-2">
               <button
                 onClick={handleSubmit}
@@ -366,7 +356,6 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          {/* Debug info (remove in production) */}
           {(currentLocation || pickupLocation || dropoffLocation) && (
             <div className="mt-4 p-3 bg-gray-50 rounded text-xs text-gray-600">
               <strong>Selected Coordinates:</strong>
@@ -395,10 +384,8 @@ const App: React.FC = () => {
           )}
         </div>
 
-        {/* Results */}
         {tripResult && (
           <div className="space-y-8">
-            {/* Route Summary */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-2xl font-semibold mb-6 flex items-center">
                 <Route className="mr-2 text-blue-600" />
@@ -435,7 +422,6 @@ const App: React.FC = () => {
                 </div>
               </div>
 
-              {/* Route Path Display */}
               <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                 <h3 className="font-semibold mb-2">Calculated Route:</h3>
                 <div className="flex items-center space-x-2 text-sm flex-wrap">
@@ -458,7 +444,6 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* Enhanced Map Display */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-2xl font-semibold mb-6">
                 Interactive Route Map
@@ -478,7 +463,6 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* Trip Segments */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-2xl font-semibold mb-6">
                 Trip Segments & Schedule
@@ -530,7 +514,6 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* Daily ELD Logs */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-2xl font-semibold mb-6 flex items-center">
                 <FileText className="mr-2 text-green-600" />

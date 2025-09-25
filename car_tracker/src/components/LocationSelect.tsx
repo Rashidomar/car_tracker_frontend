@@ -1,4 +1,3 @@
-// components/LocationSelect.tsx
 import { useState, useEffect, useRef } from "react";
 import { Combobox } from "@headlessui/react";
 import { MapPin, Loader2, Check } from "lucide-react";
@@ -6,7 +5,7 @@ import { MapPin, Loader2, Check } from "lucide-react";
 interface Location {
   id: string;
   name: string;
-  coords: [number, number]; // [lng, lat]
+  coords: [number, number];
   locality?: string;
   region?: string;
   country?: string;
@@ -35,7 +34,6 @@ export default function LocationSelect({
   const [error, setError] = useState<string | null>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Debounced search through backend
   useEffect(() => {
     if (!query.trim() || query.length < 3) {
       setResults([]);
@@ -52,7 +50,6 @@ export default function LocationSelect({
         setLoading(true);
         setError(null);
 
-        // Use the Django geocoding autocomplete endpoint
         const res = await fetch(
           `${import.meta.env.VITE_API_URL}/geocode/autocomplete/?q=${encodeURIComponent(
             query
@@ -71,7 +68,6 @@ export default function LocationSelect({
 
         const data = await res.json();
 
-        // Handle API errors
         if (data.error) {
           setError(data.error);
           setResults([]);
@@ -84,13 +80,12 @@ export default function LocationSelect({
           return;
         }
 
-        // Transform API response to Location objects
         const suggestions: Location[] = data.features.map((feature: any) => {
           const props = feature.properties;
           return {
             id: feature.id || props.id || Math.random().toString(),
             name: getDisplayName(props),
-            coords: feature.geometry.coordinates, // [lng, lat]
+            coords: feature.geometry.coordinates, 
             locality: props.locality,
             region: props.region,
             country: props.country || "US",
@@ -107,7 +102,7 @@ export default function LocationSelect({
       } finally {
         setLoading(false);
       }
-    }, 500); // Increased debounce for better UX
+    }, 500); 
 
     return () => {
       if (debounceRef.current) {
@@ -117,7 +112,6 @@ export default function LocationSelect({
   }, [query]);
 
   const getDisplayName = (properties: any): string => {
-    // Handle different API response formats
     if (properties.label) {
       return properties.label;
     }
@@ -141,7 +135,6 @@ export default function LocationSelect({
     setResults([]);
     setError(null);
 
-    // Update query to show selected location
     if (location) {
       setQuery(location.name);
     } else {
@@ -160,7 +153,6 @@ export default function LocationSelect({
     setQuery(inputValue);
     setError(null);
 
-    // Clear selection if input doesn't match current selection
     if (inputValue && value?.name && inputValue !== value.name) {
       onChange(null);
     }
@@ -182,7 +174,6 @@ export default function LocationSelect({
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors pr-10"
                 onChange={(e) => handleInputChange(e.target.value)}
                 displayValue={(location: Location | null) => {
-                  // Show current query when typing, selected name when selected
                   if (query && !value) return query;
                   return location?.name || "";
                 }}
@@ -191,14 +182,12 @@ export default function LocationSelect({
                 autoComplete="off"
               />
 
-              {/* Loading indicator */}
               {loading && (
                 <div className="absolute right-10 top-3">
                   <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
                 </div>
               )}
 
-              {/* Clear button */}
               {(value || query) && !loading && (
                 <button
                   type="button"
@@ -211,10 +200,9 @@ export default function LocationSelect({
               )}
             </div>
 
-            {/* Error message */}
             {error && (
               <div className="mt-1 text-sm text-red-600 bg-red-50 border border-red-200 p-2 rounded">
-                <span className="font-medium">⚠️ {error}</span>
+                <span className="font-medium">{error}</span>
                 <div className="text-xs mt-1">
                   Try searching for a major city or use format like "City,
                   State"
@@ -222,7 +210,6 @@ export default function LocationSelect({
               </div>
             )}
 
-            {/* Success indicator for selected location */}
             {value && !error && (
               <div className="mt-1 text-sm text-green-600 bg-green-50 border border-green-200 p-2 rounded flex items-center">
                 <Check className="h-4 w-4 mr-1" />
@@ -235,7 +222,6 @@ export default function LocationSelect({
               </div>
             )}
 
-            {/* Suggestions dropdown */}
             {open && (results.length > 0 || loading) && (
               <Combobox.Options
                 static

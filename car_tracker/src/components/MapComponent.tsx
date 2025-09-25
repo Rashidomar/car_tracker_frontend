@@ -1,4 +1,3 @@
-// components/MapComponent.tsx
 import "leaflet/dist/leaflet.css";
 import { useState, useEffect } from "react";
 import {
@@ -11,7 +10,6 @@ import {
 import L from "leaflet";
 import type { TripSegment } from "../App";
 
-// Fix for default markers in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -22,7 +20,6 @@ L.Icon.Default.mergeOptions({
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-// Custom icons for different segment types
 const createCustomIcon = (color: string) => {
   return new L.Icon({
     iconUrl: `data:image/svg+xml;base64,${btoa(`
@@ -38,13 +35,13 @@ const createCustomIcon = (color: string) => {
 };
 
 const iconColors = {
-  driving: "#ef4444", // red-500
-  fuel: "#eab308", // yellow-500
-  pickup: "#22c55e", // green-500
-  dropoff: "#16a34a", // green-600
-  sleeper_berth: "#3b82f6", // blue-500
-  rest_break: "#a855f7", // purple-500
-  default: "#6b7280", // gray-500
+  driving: "#ef4444",
+  fuel: "#eab308",
+  pickup: "#22c55e", 
+  dropoff: "#16a34a", 
+  sleeper_berth: "#3b82f6",
+  rest_break: "#a855f7",
+  default: "#6b7280", 
 };
 
 interface MapComponentProps {
@@ -60,7 +57,6 @@ const MapComponent: React.FC<MapComponentProps> = ({
   pickupLocation,
   dropoffLocation,
 }) => {
-  // Get real coordinates from backend geocoding
   const [coordinates, setCoordinates] = useState<{
     current: [number, number];
     pickup: [number, number];
@@ -74,7 +70,6 @@ const MapComponent: React.FC<MapComponentProps> = ({
       try {
         setLoading(true);
 
-        // Geocode all locations using your backend
         const locations = [currentLocation, pickupLocation, dropoffLocation];
         const coordPromises = locations.map(async (location) => {
           const response = await fetch(
@@ -84,10 +79,9 @@ const MapComponent: React.FC<MapComponentProps> = ({
 
           if (data.features && data.features.length > 0) {
             const coords = data.features[0].geometry.coordinates;
-            return [coords[1], coords[0]] as [number, number]; // Leaflet uses [lat, lng]
+            return [coords[1], coords[0]] as [number, number]; 
           }
 
-          // Fallback to default coordinates if geocoding fails
           return getDefaultCoordinates(location);
         });
 
@@ -103,7 +97,6 @@ const MapComponent: React.FC<MapComponentProps> = ({
       } catch (error) {
         console.error("Error fetching coordinates:", error);
 
-        // Fallback to default coordinates
         setCoordinates({
           current: getDefaultCoordinates(currentLocation),
           pickup: getDefaultCoordinates(pickupLocation),
@@ -140,7 +133,6 @@ const MapComponent: React.FC<MapComponentProps> = ({
       }
     }
 
-    // Default to center of US
     return [39.8283, -98.5795];
   };
 
@@ -183,7 +175,6 @@ const MapComponent: React.FC<MapComponentProps> = ({
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      {/* Route Polyline */}
       <Polyline
         positions={routePoints}
         color="#3b82f6"
@@ -191,7 +182,6 @@ const MapComponent: React.FC<MapComponentProps> = ({
         opacity={0.7}
       />
 
-      {/* Markers for key points */}
       <Marker
         position={coordinates.current}
         icon={createCustomIcon(iconColors.default)}
@@ -231,13 +221,11 @@ const MapComponent: React.FC<MapComponentProps> = ({
         </Popup>
       </Marker>
 
-      {/* Markers for segments (fuel stops, rest breaks, etc.) */}
       {segments?.map((segment, index) => {
         if (
           ["fuel", "rest_break", "sleeper_berth"].includes(segment.segment_type)
         ) {
-          // For segments, we'll place them along the route
-          // This is a simplified approach - in production you'd get exact coordinates
+       
           const progress = (index + 1) / (segments.length + 1);
           const lat =
             coordinates.current[0] +
